@@ -109,14 +109,17 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
             "this contract is not approved by you to do transactions"
         );
 
-      
+        //get the timestamp of block when the nfts were initially staked
         uint256 timestamp = stakedNFTs[msg.sender][_tokenId]
             .stakingStartTimeStamp;
 
-        
+        //calculate the staking period of time in seconds
         uint256 stakingPeriodTime = calculateStakedTimeInSeconds(timestamp);
+
+        // get the interest rate according to stakingtimeperiod
         uint256 interestrate = calculateInterestRate(stakingPeriodTime);
 
+        //calculate reward
         uint256 reward = ((interestrate *
             stakingPeriodTime *
             _amount *
@@ -124,11 +127,14 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
             12 *
             100;
 
-        //  token.safeTransfer(msg.sender,reward);
+       //send back the nft to the owner
         nft.safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
+
+        //if staked for more than a month transfer reward tokens
         if (reward != 0) {
             token.safeTransfer(msg.sender, amount);
         }
+        //emit unstaked event
         emit Unstaked(msg.sender, _tokenId, _amount, stakingPeriodTime, reward);
     }
 }

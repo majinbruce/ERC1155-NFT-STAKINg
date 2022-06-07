@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLISENCED
 pragma solidity >=0.8.4;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -18,7 +19,6 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         uint256 tokenId;
         uint256 amount;
         uint256 time;
-        bool isStaked;
     }
     // owner => tokenID => item
     mapping(address => mapping(uint256 => StakingItem)) public stakedNFTs;
@@ -40,12 +40,12 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
 
     constructor(IERC20 _tokenAddress, IERC1155 _nftAddress) {
         require(
-            address(_TokenAddress) != address(0) &&
-                address(_nftAddress) != address(0) &&
-                "Contract addresses cannot be zero address."
+            address(_tokenAddress) != address(0) &&
+                address(_nftAddress) != address(0),
+            "Contract addresses cannot be zero address."
         );
-        rewardTokenContract = _TokenAddress;
-        nftContract = _nftAddress;
+        token = _tokenAddress;
+        nft = _nftAddress;
     }
 
     function calculateInterestRate(uint256 _stakedTime)
@@ -61,29 +61,31 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
 
     function calculateStakedTimeInSeconds(uint256 _timestamp)
         private
-        pure
+        view
         returns (uint256)
     {
         return (block.timestamp - _timestamp);
     }
 
     function stakeNFT(uint256 _tokenId, uint256 _amount) external {
-        preStakingValidation(_tokenId, _amount);
+        require(
+            nft.balanceOf(msg.sender, _tokenId) >= _amount,
+            "you dont have enough balance"
+        );
 
-        currentTime = block.timestamp;
+        uint256 currentTime = block.timestamp;
 
         stakedNFTs[msg.sender][_tokenId] = StakingItem(
             msg.sender,
             _tokenId,
             _amount,
-            currentTime,
-            true
+            currentTime
         );
 
         // Transfer nft tokens from msg.sender to this staking contract.
-        nftsafeTransferFrom(msg.sender, address(this), _id, _amount, "");
+        nft.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
 
-        emit Staked(msg.sender, _id, _amount, currentTime);
+        emit Staked(msg.sender, _tokenId, _amount, currentTime);
     }
 
     function unStakeNFT(uint256 _tokenId, uint256 _amount) external {}

@@ -18,10 +18,17 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         address owner;
         uint256 tokenId;
         uint256 amount;
-        uint256 time;
+        uint256 stakingStartTimeStamp;
     }
     // owner => tokenID => item
     mapping(address => mapping(uint256 => StakingItem)) public stakedNFTs;
+
+    event Staked(
+        address indexed owner,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 time
+    );
 
     event Unstaked(
         address indexed owner,
@@ -29,13 +36,6 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         uint256 indexed amount,
         uint256 time,
         uint256 reward
-    );
-
-    event Staked(
-        address indexed owner,
-        uint256 tokenId,
-        uint256 amount,
-        uint256 time
     );
 
     constructor(IERC20 _tokenAddress, IERC1155 _nftAddress) {
@@ -98,5 +98,22 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         emit Staked(msg.sender, _tokenId, _amount, currentTime);
     }
 
-    function unStakeNFT(uint256 _tokenId, uint256 _amount) external {}
+    function unStakeNFT(uint256 _tokenId, uint256 _amount) external {
+        uint256 timestamp = stakedNFTs[msg.sender][_tokenId]
+            .stakingStartTimeStamp;
+
+        uint256 stakingPeriodTime = calculateStakedTimeInSeconds(timestamp);
+        uint256 interestrate = calculateInterestRate(stakingPeriodTime);
+
+        uint256 reward = ((interestrate *
+            stakingPeriodTime *
+            _amount *
+            10**18) / oneMonthInSeconds) *
+            12 *
+            100;
+
+        //  token.safeTransfer(msg.sender,reward);
+        nft.safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
+        emit Unstaked(msg.sender, _tokenId, _amount, stakingPeriodTime, reward);
+    }
 }

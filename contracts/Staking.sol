@@ -74,7 +74,7 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         );
         require(
             nft.isApprovedForAll(msg.sender, address(this)) == true,
-            "this contract is not approved to do transactions"
+            "this contract is not approved by you to do transactions"
         );
         require(
             _tokenId == 0 || _tokenId == 1 || _tokenId == 2,
@@ -99,9 +99,21 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
     }
 
     function unStakeNFT(uint256 _tokenId, uint256 _amount) external {
+        require(stakedNFTs[msg.sender][_tokenId].owner == msg.sender);
+        require(
+            stakedNFTs[msg.sender][_tokenId].amount <= _amount,
+            "you dont have enough staked NFTS"
+        );
+        require(
+            nft.isApprovedForAll(msg.sender, address(this)) == true,
+            "this contract is not approved by you to do transactions"
+        );
+
+      
         uint256 timestamp = stakedNFTs[msg.sender][_tokenId]
             .stakingStartTimeStamp;
 
+        
         uint256 stakingPeriodTime = calculateStakedTimeInSeconds(timestamp);
         uint256 interestrate = calculateInterestRate(stakingPeriodTime);
 

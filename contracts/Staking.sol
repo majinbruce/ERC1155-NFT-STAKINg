@@ -72,9 +72,18 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
             nft.balanceOf(msg.sender, _tokenId) >= _amount,
             "you dont have enough balance"
         );
+        require(
+            nft.isApprovedForAll(msg.sender, address(this)) == true,
+            "this contract is not approved to do transactions"
+        );
+        require(
+            _tokenId == 0 || _tokenId == 1 || _tokenId == 2,
+            "Nft with this token id does not exist"
+        );
 
-        uint256 currentTime = block.timestamp;
+        uint256 currentTime = block.timestamp; // current block time stamp in seconds
 
+        //create new nft item
         stakedNFTs[msg.sender][_tokenId] = StakingItem(
             msg.sender,
             _tokenId,
@@ -85,6 +94,7 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         // Transfer nft tokens from msg.sender to this staking contract.
         nft.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
 
+        //emit staked event
         emit Staked(msg.sender, _tokenId, _amount, currentTime);
     }
 

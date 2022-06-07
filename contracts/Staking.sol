@@ -114,6 +114,9 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
 
         //  token.safeTransfer(msg.sender,reward);
         nft.safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
+        if (reward != 0) {
+            token.safeTransfer(msg.sender, amount);
+        }
         emit Unstaked(msg.sender, _tokenId, _amount, stakingPeriodTime, reward);
     }
 }

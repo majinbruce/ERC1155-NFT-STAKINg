@@ -13,8 +13,8 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
     IERC1155 private nft;
 
     uint256 constant oneMonthInSeconds = 2629743;
-    uint256 constant rate = 10**18 / (100 * oneMonthInSeconds * 12);
 
+    uint256 constant denominator = 100 * oneMonthInSeconds * 12;
     struct StakingItem {
         address owner;
         uint256 tokenId;
@@ -120,7 +120,8 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         // get the interest rate according to stakingtimeperiod
         uint256 interestRate = calculateInterestRate(stakingPeriodTime);
 
-        uint256 reward = interestRate;
+        uint256 reward = (interestRate * _amount * stakingPeriodTime) /
+            denominator;
 
         //send back the nft to the owner
         nft.safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");

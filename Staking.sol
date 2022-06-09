@@ -55,9 +55,9 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         returns (uint256)
     {
         if (_stakedTime < oneMonthInSeconds) return 0;
-        else if (_stakedTime < oneMonthInSeconds * 6) return 5;
-        else if (_stakedTime < oneMonthInSeconds * 12) return 10;
-        else return 15;
+        else if (_stakedTime < oneMonthInSeconds * 6) return 10;
+        else if (_stakedTime < oneMonthInSeconds * 12) return 15;
+        else return 25;
     }
 
     function calculateStakedTimeInSeconds(uint256 _timestamp)

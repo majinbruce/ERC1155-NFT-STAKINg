@@ -14,6 +14,7 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
 
     uint256 constant oneMonthInSeconds = 2629743;
 
+    uint256 constant denominator = 100 * oneMonthInSeconds * 12;
     struct StakingItem {
         address owner;
         uint256 tokenId;
@@ -54,9 +55,9 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         returns (uint256)
     {
         if (_stakedTime < oneMonthInSeconds) return 0;
-        else if (_stakedTime < oneMonthInSeconds * 6) return 5;
-        else if (_stakedTime < oneMonthInSeconds * 12) return 10;
-        else return 15;
+        else if (_stakedTime < oneMonthInSeconds * 6) return 10;
+        else if (_stakedTime < oneMonthInSeconds * 12) return 15;
+        else return 25;
     }
 
     function calculateStakedTimeInSeconds(uint256 _timestamp)
@@ -117,22 +118,17 @@ contract Staking is ReentrancyGuard, ERC1155Holder {
         uint256 stakingPeriodTime = calculateStakedTimeInSeconds(timestamp);
 
         // get the interest rate according to stakingtimeperiod
-        uint256 interestrate = calculateInterestRate(stakingPeriodTime);
+        uint256 interestRate = calculateInterestRate(stakingPeriodTime);
 
-        //calculate reward
-        uint256 reward = ((interestrate *
-            stakingPeriodTime *
-            _amount *
-            10**18) / oneMonthInSeconds) *
-            12 *
-            100;
+        uint256 reward = (interestRate * _amount * stakingPeriodTime) /
+            denominator;
 
-       //send back the nft to the owner
+        //send back the nft to the owner
         nft.safeTransferFrom(address(this), msg.sender, _tokenId, _amount, "");
 
         //if staked for more than a month transfer reward tokens
         if (reward != 0) {
-            token.safeTransfer(msg.sender, amount);
+            token.safeTransfer(msg.sender, reward);
         }
         //emit unstaked event
         emit Unstaked(msg.sender, _tokenId, _amount, stakingPeriodTime, reward);
